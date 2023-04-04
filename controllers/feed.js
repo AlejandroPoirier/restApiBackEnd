@@ -5,7 +5,16 @@ exports.getPosts = (req, res, next) => {
 
     // we should assing the status code also
     res.status(200).json({
-        posts: [{title:"FP", content: 'First post content'}]
+        posts: [{
+            _id: '1',
+            title:'FP',
+            content: 'First post content',
+            imageUrl:'images/smileyFace.webp',
+            creator: {
+                name: 'GPA',
+            },
+            createdAt: new Date(),
+        }]
     });
 };
 
