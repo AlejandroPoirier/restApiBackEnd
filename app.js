@@ -1,15 +1,41 @@
+require('dotenv').config();
 
 const path = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 
+const multer = require('multer');
+
 const feeedRoutes = require('./routes/feed')
 
-const app = express()
+const app = express();
+
+const { v4: uuidv4 } = require('uuid');
+ 
+const fileStorage = multer.diskStorage({
+    destination: function(req, file, cb) {
+        cb(null, 'images');
+    },
+    filename: function(req, file, cb) {
+        cb(null, uuidv4())
+    }
+});
+
+const fileFilter = (req, file, cb) => {
+    if(file.mimetype === 'image/png' || file.mimetype === 'image/jpg' || file.mimetype === 'image/jpeg') {
+        cb(null, true);
+    } else {
+        cb(null, false);
+    }
+}
 
 //app.use(bodyParser.urlencoded());   => for data  x-www-form-urlendoded.
 app.use(bodyParser.json()); //=> to parse data in JSON format
+
+app.use(
+    multer({storage: fileStorage, fileFilter: fileFilter}).single('image')
+);
 
 app.use('/images', express.static(path.join(__dirname,'images')));
 
@@ -36,13 +62,13 @@ app.use((error, req, res, next) => {
 
 
 mongoose.connect(
-    'mongodb+srv://alejandroPoirier:dataBaseLearning2022@cluster0.zbjocn6.mongodb.net/messages?retryWrites=true&w=majority'
+    process.env.MONGO_URL
     )
     .then(result => {
         app.listen(8080);
     })
     .catch(err => {
         console.log(err);
-    })
+    });
 
 
