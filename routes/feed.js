@@ -32,4 +32,7 @@ router.put('/post/:postId',[
     body('content').trim().isLength({min: 5})
 ], feedController.updatePost);
 
+
+router.delete('/post/:postId', deletePost);
+
 module.exports = router;
