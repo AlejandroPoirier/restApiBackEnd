@@ -11,12 +11,22 @@ exports.getPosts = (req, res, next) => {
     //instead we'll use res.json()
 
     // we should assing the status code also
-
+    const currentPage = req.query.page;
+    const perPage = 2;
+    let totalItems;
     Post.find()
+    .countDocuments()
+    .then(count => {
+        totalItems = count;
+        return Post.find()
+        .skip((currentPage-1) * perPage)
+        .limit(perPage);
+    })
     .then(posts => {
         res.status(200).json({
             message: 'Fetched post successfully.', 
-            posts: posts})
+            posts: posts,
+            totalItems: totalItems})
     })
     .catch(err => {
         if (!err.statusCode) {
@@ -24,19 +34,6 @@ exports.getPosts = (req, res, next) => {
         }
         next(err);
     })
-
-    // res.status(200).json({
-    //     posts: [{
-    //         _id: '1',
-    //         title:'FP',
-    //         content: 'First post content',
-    //         imageUrl:'images/smileyFace.webp',
-    //         creator: {
-    //             name: 'GPA',
-    //         },
-    //         createdAt: new Date(),
-    //     }]
-    // });
 };
 
 

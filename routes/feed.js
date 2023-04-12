@@ -9,7 +9,7 @@ const express = require('express');
 
 //'body' is a function that performs validation checks on
 //request bodies  in an Express.js application
-const { body } = require('express-validator/check');
+const { body } = require('express-validator');
 
 const feedController = require('../controllers/feed');
 
@@ -33,6 +33,6 @@ router.put('/post/:postId',[
 ], feedController.updatePost);
 
 
-router.delete('/post/:postId', deletePost);
+router.delete('/post/:postId', feedController.deletePost);
 
 module.exports = router;
