@@ -10,7 +10,6 @@ const multer = require('multer');
 const feeedRoutes = require('./routes/feed');
 const authRoutes = require('./routes/auth');
 
-
 const app = express();
 
 const { v4: uuidv4 } = require('uuid');
@@ -41,7 +40,7 @@ app.use(
 
 app.use('/images', express.static(path.join(__dirname,'images')));
 
-//we add headers in order to not have CORS errors, we create new middleware:
+//we add headers in order to not have ¡CORS ERRORS!, we create new middleware:
 app.use((req, res, next) => {
     //we allow access to our data to specific origins *-all origins
     res.setHeader('Access-Control-Allow-Origin', '*');
