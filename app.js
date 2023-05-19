@@ -7,8 +7,13 @@ const mongoose = require('mongoose');
 
 const multer = require('multer');
 
-const feeedRoutes = require('./routes/feed');
-const authRoutes = require('./routes/auth');
+const { graphqlHTTP  } = require('express-graphql');
+
+const graphqlSchema = require('./graphql/schema');
+const graphqlResolver = require('./graphql/resolvers');
+
+// const feeedRoutes = require('./routes/feed');
+// const authRoutes = require('./routes/auth');
 
 const app = express();
 
@@ -51,10 +56,15 @@ app.use((req, res, next) => {
     next();
 });
 
-//forward every request starting with '/feed' to the feedRoutes
-app.use('/feed',feeedRoutes);
+app.use('/graphql', graphqlHTTP({
+    schema: graphqlSchema,
+    rootValue: graphqlResolver
+}));
 
-app.use('/auth',authRoutes);
+//forward every request starting with '/feed' to the feedRoutes
+// app.use('/feed',feeedRoutes);
+
+// app.use('/auth',authRoutes);
 
 app.use((error, req, res, next) => {
     console.log(error);
