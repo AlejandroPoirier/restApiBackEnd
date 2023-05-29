@@ -12,6 +12,8 @@ const { graphqlHTTP  } = require('express-graphql');
 const graphqlSchema = require('./graphql/schema');
 const graphqlResolver = require('./graphql/resolvers');
 
+const auth = require('./middleware/auth');
+
 // const feeedRoutes = require('./routes/feed');
 // const authRoutes = require('./routes/auth');
 
@@ -49,16 +51,35 @@ app.use('/images', express.static(path.join(__dirname,'images')));
 app.use((req, res, next) => {
     //we allow access to our data to specific origins *-all origins
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE');
+    res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET, POST, PUT, PATCH, DELETE');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
 
     //we call next, so the request can continue
     next();
 });
 
+
+app.use(auth);
+
 app.use('/graphql', graphqlHTTP({
     schema: graphqlSchema,
-    rootValue: graphqlResolver
+    rootValue: graphqlResolver,
+    graphiql: true,
+    formatError(err) {
+        if (!err.originalError) {
+            return err;
+        }
+
+        const data = err.originalError.data;
+        const message = err.message || 'An error ocurred.';
+        const code = err.originalError.code;
+
+        return { message: message, status: code, data: data }
+    }
 }));
 
 //forward every request starting with '/feed' to the feedRoutes
