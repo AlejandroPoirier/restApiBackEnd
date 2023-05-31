@@ -84,7 +84,7 @@ module.exports = {
     createPost: async function({ postInput }, req) {
 
         if (!req.isAuth) {
-            const err = new Error('User is unauthorized, please authenticate');
+            const err = new Error('User is not authorized, please authenticate');
             err.code = 401;
             throw err
         }
@@ -132,5 +132,61 @@ module.exports = {
                 createdAt: createdPost.createdAt.toISOString(),
                 updatedAt: createdPost.updatedAt.toISOString()
             }
+    },
+
+    posts: async function({page}, req) {
+        if (!req.isAuth) {
+            const err = new Error('User is not authorized, please authenticate');
+            err.code = 401;
+            throw err
+        }
+
+        if (!page) {
+            page = 1;
+        }
+
+        const perPage = 2;
+
+        const totalPosts = await Post.find().countDocuments();
+        const posts = await Post.find()
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * perPage)
+            .limit(perPage)
+            .populate('creator');
+
+        // const postToString = [...posts].map((post) => {
+        //     return 
+        // })
+        
+        return { posts: posts.map(singlePost => {
+            return {
+                ...singlePost._doc,
+                _id: singlePost._id.toString(),
+                createdAt: singlePost.createdAt.toISOString(),
+                updatedAt: singlePost.updatedAt.toISOString()
+            };
+        }), totalPosts: totalPosts }
+    },
+
+
+    post: async function({id}, req) {
+        if (!req.isAuth) {
+            const err = new Error('User is not authorized, please authenticate');
+            err.code = 401;
+            throw err
+        }
+
+        const post = await Post.findById(id).populate('creator');
+        
+        if(!post){
+            const err = new Error('Post not found');
+            err.code = 404;
+            throw err 
+        }
+
+        return { ...post._doc,
+            _id: post._id.toString(),
+            createdAt: post.createdAt.toISOString(),
+            updatedAt: post.updatedAt.toISOString()}
     }
 }
