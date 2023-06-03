@@ -2,6 +2,8 @@ const bcrypt = require('bcryptjs');
 const validator =  require('validator');
 const jwt = require('jsonwebtoken');
 
+const path = require('path');
+const fs = require('fs');
 
 const User = require('../models/user');
 const Post = require('../models/post');
@@ -188,5 +190,146 @@ module.exports = {
             _id: post._id.toString(),
             createdAt: post.createdAt.toISOString(),
             updatedAt: post.updatedAt.toISOString()}
+    },
+
+    updatePost: async function({id, postInput}, req) {
+        if (!req.isAuth) {
+            const err = new Error('User is not authorized, please authenticate');
+            err.code = 401;
+            throw err
+        }
+
+        const post = await Post.findById(id).populate('creator');
+
+        if(!post){
+            const err = new Error('Post not found, you cannot modify it.')
+            err.code = 404;
+            throw err;
+        }
+
+        console.log(post.creator._id.toString(), req.userId.toString())
+
+        if (post.creator._id.toString() !== req.userId.toString()) {
+            const err = new Error('You cannot edit this post')
+            err.code = 403;
+            throw err;
+        }
+
+        const errors = [];
+
+        if (validator.isEmpty(postInput.title) || !validator.isLength(postInput.title, { min: 5 })) {
+            error.push({message: "Title is empty or it is too short, min 5 characters."})
+        }
+
+        if (validator.isEmpty(postInput.content) || !validator.isLength(postInput.content, { min: 5 })) {
+            error.push({message: "Content is empty or it is too short, min 5 characters."})
+        }
+
+        if (errors.length > 0) {
+            const err = new Error('You have 1 or more invalid inputs');
+            err.data = errors;
+            err.code = 422;
+            throw err
+        }
+
+        post.title = postInput.title;
+        post.content = postInput.content;
+        if (postInput.imageUrl !== 'undefined') {
+            post.imageUrl = postInput.imageUrl;
+        }
+
+        const updatedPost = await post.save()
+
+        return { ...updatedPost._doc,
+            _id: updatedPost._id.toString(),
+            createdAt: updatedPost.createdAt.toISOString(),
+            updatedAt: updatedPost.updatedAt.toISOString()}
+    },
+
+    deletePost: async function({id}, req){
+
+        if (!req.isAuth) {
+            const err = new Error('User is not authorized, please authenticate');
+            err.code = 401;
+            throw err
+        }
+
+        const post = await Post.findById(id).populate('creator');
+        
+
+        if (!post) {
+            const err = new Error('Unable to delete post');
+            err.code = 404;
+            throw err
+        }
+
+        if (post.creator._id.toString() !== req.userId.toString()) {
+            const err = new Error(`You cannot edit this post
+            1:${post.creator.toString()} !== ${req.userId.toString()}`)
+            err.code = 403;
+            throw err;
+        }
+
+        clearImage(post.imageUrl);
+
+        await Post.findByIdAndDelete(id);
+
+        const user = await User.findById(req.userId);
+        user.post.pull(id);
+        await user.save()
+        
+        return true;
+    
+    },
+    user: async function(args, req){
+        if (!req.isAuth) {
+            const err = new Error('User is not authorized, please authenticate');
+            err.code = 401;
+            throw err
+        }
+
+        const userId = req.userId;
+        const user = await User.findById(userId);
+
+        if (!user) {
+            const err = new Error('User not found');
+            err.code = 401;
+            throw err
+        }
+
+        return { ...user._doc,
+            _id: user._id.toString(),
+        }
+
+    },
+
+    updateStatus: async function({status}, req){
+        if (!req.isAuth) {
+            const err = new Error('User is not authorized, please authenticate');
+            err.code = 401;
+            throw err
+        }
+
+        const user = await User.findById(req.userId);
+
+        if(!user){
+            const err = new Error('User not found')
+            err.code = 401;
+            throw err;
+        }
+
+        user.status = status;
+
+        await user.save()
+
+        return { ...user._doc,
+            _id: user._id.toString(),
+        }
     }
+}
+
+
+const clearImage = filePath => {
+    filePath = path.join(__dirname, '..', filePath);
+    fs.unlink(filePath, err => console.log(err));
 }
